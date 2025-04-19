@@ -2,11 +2,7 @@ import streamlit as st
 import os
 import requests
 import json
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
-
-# Load environment variables
-load_dotenv()
 
 # Configure page
 st.set_page_config(
@@ -44,11 +40,6 @@ try:
 except Exception as e:
     st.sidebar.error(f"Error loading Q&A data: {str(e)}")
 
-# Create .env file if it doesn't exist
-if not os.path.exists('.env'):
-    with open('.env', 'w') as f:
-        f.write('GEMINI_API_KEY=AIzaSyCZ-1D3PVny0WD2Qzz_2rYi-C2a7VWv24Q\n')
-
 # Initialize session states
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -62,20 +53,19 @@ if "cache" not in st.session_state:
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = []
 
-# Get API key from .env file or environment variables
-api_key = os.getenv('GEMINI_API_KEY')
+# Set up API key in Streamlit session state
+if "api_key" not in st.session_state:
+    st.session_state.api_key = "AIzaSyCZ-1D3PVny0WD2Qzz_2rYi-C2a7VWv24Q"  # Default key
 
 # Set up configuration settings in sidebar
 st.sidebar.header("Configuration")
 
 # API key management (moved to top of sidebar for better visibility)
 st.sidebar.subheader("API Key Management")
-new_api_key = st.sidebar.text_input("Gemini API Key", value=api_key, type="password")
+new_api_key = st.sidebar.text_input("Gemini API Key", value=st.session_state.api_key, type="password")
 
 if st.sidebar.button("Update API Key"):
-    with open('.env', 'w') as f:
-        f.write(f'GEMINI_API_KEY={new_api_key}\n')
-    api_key = new_api_key
+    st.session_state.api_key = new_api_key
     st.sidebar.success("API key updated!")
 
 gemini_model = st.sidebar.selectbox(
@@ -125,7 +115,7 @@ def call_gemini_api(prompt, history=None):
     """
     Call the Gemini API with the given prompt and history
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={st.session_state.api_key}"
     
     headers = {
         "Content-Type": "application/json"
